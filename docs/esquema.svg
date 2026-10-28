@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="titulo desc">
+  <title id="titulo">Conexiones ESP32, DS18B20, LED y ventilador 12 V</title>
+  <desc id="desc">Diagrama lógico de cableado sobre una sola protoboard: DS18B20 en GPIO 18, MOSFET en GPIO 19, LED en GPIO 21, fuente de 12 V para el ventilador y GND común.</desc>
+
+  <style>
+    .fondo { fill: #f7f9fc; }
+    .titulo { font: 700 24px Inter, Arial, sans-serif; fill: #0f172a; }
+    .subtitulo { font: 400 13px Inter, Arial, sans-serif; fill: #475569; }
+    .placa { fill: #1f2937; stroke: #0f172a; stroke-width: 2; }
+    .placa-texto { font: 600 15px Inter, Arial, sans-serif; fill: #f8fafc; }
+    .placa-chico { font: 400 11px Inter, Arial, sans-serif; fill: #cbd5e1; }
+    .pin { fill: #fbbf24; stroke: #b45309; stroke-width: 1; }
+    .pin-texto { font: 600 12px Inter, Arial, sans-serif; fill: #f8fafc; }
+    .board { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; }
+    .board-texto { font: 600 13px Inter, Arial, sans-serif; fill: #475569; }
+    .caja { fill: #ffffff; stroke: #334155; stroke-width: 2; }
+    .caja-sensor { fill: #dbeafe; stroke: #2563eb; }
+    .caja-fuente { fill: #fee2e2; stroke: #dc2626; }
+    .caja-fan { fill: #dcfce7; stroke: #16a34a; }
+    .caja-borne { fill: #fef3c7; stroke: #d97706; }
+    .caja-mosfet { fill: #ede9fe; stroke: #6d28d9; }
+    .texto { font: 600 13px Inter, Arial, sans-serif; fill: #0f172a; }
+    .texto-chico { font: 400 11px Inter, Arial, sans-serif; fill: #334155; }
+    .texto-blanco { font: 600 12px Inter, Arial, sans-serif; fill: #ffffff; }
+    .texto-sensor { font: 600 13px Inter, Arial, sans-serif; fill: #1e3a8a; }
+    .texto-fuente { font: 600 13px Inter, Arial, sans-serif; fill: #991b1b; }
+    .texto-fan { font: 600 13px Inter, Arial, sans-serif; fill: #166534; }
+    .texto-mosfet { font: 600 13px Inter, Arial, sans-serif; fill: #4c1d95; }
+    .cable { fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+    .cable-rojo { stroke: #dc2626; }
+    .cable-negro { stroke: #111827; }
+    .cable-amarillo { stroke: #eab308; }
+    .cable-verde { stroke: #16a34a; }
+    .cable-naranja { stroke: #f97316; }
+    .cable-azul { stroke: #2563eb; }
+    .cable-gris { stroke: #64748b; stroke-dasharray: 6 5; }
+    .nodo { fill: #111827; }
+    .componente { fill: #ffffff; stroke: #334155; stroke-width: 2; }
+    .aviso { fill: #fef2f2; stroke: #dc2626; stroke-width: 2; }
+    .aviso-texto { font: 600 13px Inter, Arial, sans-serif; fill: #991b1b; }
+    .leyenda { font: 400 11px Inter, Arial, sans-serif; fill: #334155; }
+  </style>
+
+  <rect class="fondo" width="1200" height="900"/>
+  <text class="titulo" x="40" y="40">Monitor de Vitrina — conexiones del hardware real</text>
+  <text class="subtitulo" x="40" y="64">Una sola protoboard · DS18B20 en GPIO 18 · MOSFET en GPIO 19 · LED en GPIO 21 · fuente de 12 V solo para el ventilador</text>
+
+  <!-- ================= ESP32 ================= -->
+  <rect class="placa" x="50" y="100" width="230" height="540" rx="14"/>
+  <text class="placa-texto" x="165" y="132" text-anchor="middle">ESP32 DevKit V1</text>
+  <text class="placa-chico" x="165" y="150" text-anchor="middle">vista lógica de pines</text>
+
+  <!-- Pines: centro en y = 170, 220, 300, 370, 440, 510, 560 -->
+  <rect class="pin" x="270" y="162" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="175" text-anchor="end">3V3</text>
+
+  <rect class="pin" x="270" y="212" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="225" text-anchor="end">GND</text>
+
+  <rect class="pin" x="270" y="292" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="305" text-anchor="end">GPIO 18</text>
+
+  <rect class="pin" x="270" y="362" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="375" text-anchor="end">GPIO 19</text>
+
+  <rect class="pin" x="270" y="432" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="445" text-anchor="end">GPIO 21</text>
+
+  <rect class="pin" x="270" y="502" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="515" text-anchor="end">5V</text>
+
+  <rect class="pin" x="270" y="552" width="20" height="16"/>
+  <text class="pin-texto" x="260" y="565" text-anchor="end">GND</text>
+
+  <text class="placa-chico" x="165" y="600" text-anchor="middle">Alimentación: USB 5 V</text>
+  <text class="placa-chico" x="165" y="618" text-anchor="middle">No conectar 12 V aquí</text>
+
+  <!-- ================= PROTOBOARD ================= -->
+  <rect class="board" x="340" y="90" width="820" height="650" rx="16"/>
+  <text class="board-texto" x="750" y="120" text-anchor="middle">Protoboard (una sola) — distribución lógica por zonas</text>
+
+  <!-- ================= BORNERA 3 PINES ================= -->
+  <rect class="caja-borne" x="380" y="140" width="100" height="150" rx="8"/>
+  <text class="texto" x="430" y="132" text-anchor="middle">Bornera 3 pines</text>
+
+  <circle cx="430" cy="170" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+  <circle cx="430" cy="210" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+  <circle cx="430" cy="250" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+  <text class="texto-chico" x="446" y="158">1 · 3V3</text>
+  <text class="texto-chico" x="446" y="198">2 · DATA</text>
+  <text class="texto-chico" x="446" y="238">3 · GND</text>
+
+  <!-- 3V3 y GND desde el ESP32 -->
+  <path class="cable cable-rojo" d="M290 170 H380"/>
+  <path class="cable cable-negro" d="M290 220 H350 V250 H362"/>
+  <path class="cable cable-negro" d="M378 250 H380"/>
+
+  <!-- DATA: GPIO18 rodea por abajo para no cruzar el GND -->
+  <path class="cable cable-amarillo" d="M290 300 H370 V210 H380"/>
+
+  <!-- ================= DS18B20 ================= -->
+  <rect class="caja-sensor" x="650" y="140" width="190" height="130" rx="10"/>
+  <text class="texto-sensor" x="745" y="172" text-anchor="middle">DS18B20</text>
+  <text class="texto-chico" x="745" y="192" text-anchor="middle">sonda impermeable, 3 hilos</text>
+  <text class="texto-chico" x="745" y="218" text-anchor="middle" fill="#b91c1c">rojo = 3V3</text>
+  <text class="texto-chico" x="745" y="238" text-anchor="middle" fill="#a16207">amarillo = DATA</text>
+  <text class="texto-chico" x="745" y="258" text-anchor="middle" fill="#111827">negro = GND</text>
+
+  <!-- Cables bornera -> sensor -->
+  <path class="cable cable-rojo" d="M480 170 H650"/>
+  <path class="cable cable-amarillo" d="M480 210 H650"/>
+  <path class="cable cable-negro" d="M480 250 H650"/>
+
+  <!-- Pull-up 4.7k entre 3V3 (170) y DATA (210) -->
+  <path class="cable cable-azul" d="M530 170 V182"/>
+  <rect class="componente" x="524" y="182" width="12" height="18" rx="2"/>
+  <path class="cable cable-azul" d="M530 200 V210"/>
+  <circle class="nodo" cx="530" cy="170" r="4"/>
+  <circle class="nodo" cx="530" cy="210" r="4"/>
+  <text class="texto-chico" x="546" y="194">4.7 kΩ pull-up</text>
+
+  <!-- ================= LED ================= -->
+  <path class="cable cable-naranja" d="M290 440 H360 V400 H400"/>
+  <!-- LED: ánodo, triángulo, barra, cátodo -->
+  <path class="cable cable-naranja" d="M400 400 H415"/>
+  <path d="M415 388 L435 400 L415 412 Z" fill="#fca5a5" stroke="#dc2626" stroke-width="2"/>
+  <path d="M435 388 V412" stroke="#dc2626" stroke-width="3"/>
+  <path class="cable cable-naranja" d="M435 400 H470"/>
+  <rect class="componente" x="470" y="393" width="40" height="14" rx="2"/>
+  <path class="cable cable-naranja" d="M510 400 H520 V660"/>
+  <circle class="nodo" cx="520" cy="400" r="4"/>
+  <circle class="nodo" cx="520" cy="660" r="4"/>
+  <text class="texto-chico" x="400" y="382">LED rojo</text>
+  <text class="texto-chico" x="472" y="382">330 Ω</text>
+
+  <!-- ================= MOSFET ================= -->
+  <path class="cable cable-verde" d="M290 370 H600 V490 H640"/>
+  <rect class="componente" x="640" y="483" width="40" height="14" rx="2"/>
+  <path class="cable cable-verde" d="M680 490 H720"/>
+  <circle class="nodo" cx="690" cy="490" r="4"/>
+  <text class="texto-chico" x="640" y="470">220 Ω</text>
+
+  <rect class="caja-mosfet" x="720" y="430" width="100" height="160" rx="10"/>
+  <text class="texto-mosfet" x="770" y="460" text-anchor="middle">IRLZ44N</text>
+  <text class="texto-chico" x="770" y="478" text-anchor="middle" fill="#4c1d95">MOSFET canal N</text>
+  <text class="texto-chico" x="732" y="494" fill="#4c1d95">G</text>
+  <text class="texto-chico" x="766" y="446" fill="#4c1d95">D</text>
+  <text class="texto-chico" x="766" y="584" fill="#4c1d95">S</text>
+
+  <!-- 10k gate-source -->
+  <path class="cable cable-negro" d="M690 490 V520"/>
+  <rect class="componente" x="683" y="520" width="14" height="40" rx="2"/>
+  <path class="cable cable-negro" d="M690 560 V660"/>
+  <circle class="nodo" cx="690" cy="660" r="4"/>
+  <text class="texto-chico" x="706" y="545">10 kΩ</text>
+
+  <!-- Source a GND -->
+  <path class="cable cable-negro" d="M770 590 V660"/>
+  <circle class="nodo" cx="770" cy="660" r="4"/>
+
+  <!-- Drain al negro del ventilador -->
+  <path class="cable cable-negro" d="M770 430 V410 H870 V230"/>
+  <text class="texto-chico" x="785" y="404">negro del ventilador</text>
+
+  <!-- ================= VENTILADOR ================= -->
+  <rect class="caja-fan" x="900" y="150" width="150" height="110" rx="10"/>
+  <text class="texto-fan" x="975" y="172" text-anchor="middle">Ventilador</text>
+  <text class="texto-chico" x="975" y="190" text-anchor="middle" fill="#166534">12 V DC</text>
+  <circle cx="975" cy="215" r="20" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <path d="M975 215 L975 198 M975 215 L990 223 M975 215 L960 223" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="975" cy="215" r="3" fill="#16a34a"/>
+
+  <!-- Terminales del ventilador -->
+  <circle cx="900" cy="230" r="5" fill="#111827"/>
+  <circle cx="1050" cy="230" r="5" fill="#dc2626"/>
+  <text class="texto-chico" x="888" y="248" text-anchor="end">−</text>
+  <text class="texto-chico" x="1062" y="248">+</text>
+
+  <!-- Negro ventilador -> drain -->
+  <path class="cable cable-negro" d="M900 230 H870"/>
+
+  <!-- Rojo ventilador -> +12V -->
+  <path class="cable cable-rojo" d="M1050 230 H1120 V585 H1070"/>
+
+  <!-- Diodo 1N4007 en paralelo con el ventilador -->
+  <path class="cable cable-azul" d="M870 230 V120 H960"/>
+  <path d="M960 110 L980 120 L960 130 Z" fill="#bfdbfe" stroke="#2563eb" stroke-width="2"/>
+  <path d="M980 110 V130" stroke="#2563eb" stroke-width="3"/>
+  <path class="cable cable-azul" d="M980 120 H1080 V230"/>
+  <circle class="nodo" cx="870" cy="230" r="4"/>
+  <circle class="nodo" cx="1080" cy="230" r="4"/>
+  <text class="texto-chico" x="970" y="104" text-anchor="middle">1N4007</text>
+  <text class="texto-chico" x="1010" y="136" text-anchor="middle">cátodo a +12 V</text>
+
+  <!-- ================= FUENTE 12V ================= -->
+  <rect class="caja-fuente" x="880" y="540" width="190" height="90" rx="10"/>
+  <text class="texto-fuente" x="975" y="566" text-anchor="middle">Fuente 12 V</text>
+  <text class="texto-chico" x="975" y="584" text-anchor="middle" fill="#991b1b">cable de módem</text>
+  <text class="texto-chico" x="1062" y="606" text-anchor="end" fill="#991b1b">+ rojo</text>
+  <text class="texto-chico" x="888" y="606" fill="#111827">negro −</text>
+
+  <!-- Terminales de la fuente -->
+  <circle cx="1070" cy="585" r="5" fill="#dc2626"/>
+  <circle cx="880" cy="585" r="5" fill="#111827"/>
+
+  <!-- Negro de la fuente al GND común -->
+  <path class="cable cable-negro" d="M880 585 H840 V660"/>
+  <circle class="nodo" cx="840" cy="660" r="4"/>
+
+  <!-- ================= GND COMUN ================= -->
+  <path class="cable cable-negro" d="M290 560 H320 V660 H1120"/>
+  <circle class="nodo" cx="340" cy="660" r="4"/>
+  <text class="texto" x="730" y="684" text-anchor="middle">GND común: ESP32 + fuente de 12 V + sensor</text>
+
+  <!-- ================= AVISO ================= -->
+  <rect class="aviso" x="50" y="760" width="1110" height="46" rx="10"/>
+  <text class="aviso-texto" x="605" y="789" text-anchor="middle">El GPIO del ESP32 no alimenta el ventilador: usa MOSFET o relé. GND común obligatorio. Alimenta el ESP32 por USB.</text>
+
+  <!-- ================= LEYENDA ================= -->
+  <line class="cable cable-rojo" x1="70" y1="832" x2="105" y2="832"/>
+  <text class="leyenda" x="112" y="836">+12 V</text>
+
+  <line class="cable cable-negro" x1="190" y1="832" x2="225" y2="832"/>
+  <text class="leyenda" x="232" y="836">GND</text>
+
+  <line class="cable cable-amarillo" x1="300" y1="832" x2="335" y2="832"/>
+  <text class="leyenda" x="342" y="836">DATA 1-Wire</text>
+
+  <line class="cable cable-verde" x1="460" y1="832" x2="495" y2="832"/>
+  <text class="leyenda" x="502" y="836">señal GPIO 19</text>
+
+  <line class="cable cable-naranja" x1="640" y1="832" x2="675" y2="832"/>
+  <text class="leyenda" x="682" y="836">LED GPIO 21</text>
+
+  <line class="cable cable-azul" x1="800" y1="832" x2="835" y2="832"/>
+  <text class="leyenda" x="842" y="836">pull-up / diodo</text>
+</svg>

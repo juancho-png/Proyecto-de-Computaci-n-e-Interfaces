@@ -21,6 +21,36 @@ TIEMPO_MAX_RECUPERACION_MIN = 15  # minutos fuera de rango antes de pedir revisi
 MODOS = ("auto", "manual", "apagado")
 INTERVALOS_VALIDOS = (10, 30, 60)
 LECTURAS_INVALIDAS = (-127.0, 85.0)   # valores que entrega el DS18B20 cuando falla o se reinicia
+VERSION = "1.1"
+
+# Mapa de hardware real (una sola protoboard). El ESP32 solo entrega la señal:
+# el ventilador de 12 V se conmuta con MOSFET o relé, nunca directo desde un GPIO.
+HARDWARE = {
+    "placa": "ESP32 DevKit V1",
+    "alimentacion_esp32": "USB 5 V. No conectar los 12 V del ventilador al ESP32.",
+    "sensor": {
+        "modelo": "DS18B20 (sonda impermeable de 3 hilos)",
+        "pin_datos": 18,
+        "alimentacion": "3.3 V",
+        "pull_up_ohm": 4700,
+        "bornera": "3 pines: 1 = 3V3, 2 = DATA (GPIO 18), 3 = GND",
+    },
+    "actuador": {
+        "tipo": "MOSFET canal N (IRLZ44N / IRL540N) o módulo relé",
+        "pin_senal": 19,
+        "logica": "activo en alto para MOSFET; activo en bajo para relé",
+        "fuente_ventilador": "12 V DC (rojo +, negro -)",
+        "proteccion": "Diodo 1N4007 en paralelo con el ventilador, cátodo a +12 V",
+        "gnd_comun": True,
+    },
+    "led": {
+        "pin": 21,
+        "color": "rojo",
+        "resistencia_ohm": 330,
+        "funcion": "Indicador de ventilador encendido / enfriamiento activo",
+    },
+    "pines_a_evitar": [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 34, 35, 36, 39],
+}
 
 app = Flask(__name__, static_folder=os.path.join(BASE, "static"), static_url_path="/static")
 
@@ -250,7 +280,35 @@ def interfaz():
     return send_from_directory(app.static_folder, "index.html")
 
 
+# ======================= Hardware =======================
+@app.get("/hardware")
+def info_hardware():
+    """Mapa de pines y notas de cableado. Es la fuente única para el informe y el firmware."""
+    return jsonify(HARDWARE)
+
+
+@app.get("/salud")
+def salud():
+    """Prueba rápida de conectividad desde el ESP32 (no requiere base de datos)."""
+    return jsonify(ok=True, servicio="monitor-vitrina", version=VERSION, hora=ahora())
+
+
 # ======================= Endpoints del ESP32 =======================
+def _respuesta_esp32(vitrina, estado, ventilador, sensor_ok=True):
+    """Respuesta común al ESP32. 'led' es un alias de 'ventilador': el LED rojo
+    indica que la orden de enfriamiento está activa."""
+    encendido = bool(ventilador)
+    return jsonify(
+        estado=estado,
+        ventilador=encendido,
+        led=encendido,
+        salida={"ventilador": encendido, "led": encendido},
+        sensor_ok=bool(sensor_ok),
+        intervalo=vitrina.intervalo_s,
+        modo=vitrina.modo,
+    )
+
+
 def _alerta_abierta(db, id_vitrina):
     """True si la última alerta de temperatura sigue abierta (no hubo recuperación)."""
     ultima = db.execute(
@@ -300,7 +358,7 @@ def recibir_lectura():
         db.execute("UPDATE vitrinas SET ultimo_contacto=? WHERE id_vitrina=?", (ahora(), id_vitrina))
         db.commit()
         orden = {"apagado": False, "manual": vitrina.ventilador_manual}.get(vitrina.modo, ventilador_actual)
-        return jsonify(estado="SENSOR_ERROR", ventilador=orden, intervalo=vitrina.intervalo_s, modo=vitrina.modo)
+        return _respuesta_esp32(vitrina, "SENSOR_ERROR", orden, sensor_ok=False)
 
     estado = vitrina.evaluar_estado(temperatura)
     orden_ventilador = vitrina.orden_ventilador(temperatura, ventilador_actual)
@@ -325,7 +383,7 @@ def recibir_lectura():
         alerta.notificar_usuario()
 
     db.commit()
-    return jsonify(estado=estado, ventilador=orden_ventilador, intervalo=vitrina.intervalo_s, modo=vitrina.modo)
+    return _respuesta_esp32(vitrina, estado, orden_ventilador)
 
 
 # ======================= Endpoints de la interfaz =======================
@@ -423,6 +481,7 @@ def estado_actual():
         modo=vitrina.modo, ventilador_manual=vitrina.ventilador_manual,
         intervalo_s=vitrina.intervalo_s, configurada=vitrina.configurada,
         ultima_lectura=ultima_d,
+        led=bool(ultima_d["ventilador"]) if ultima_d else False,
         conectado=conectado, segundos_sin_datos=segundos_sin_datos,
         ultimo_contacto=fila["ultimo_contacto"],
         sensor_error=fila["error_sensor_desde"] is not None and conectado,

@@ -9,7 +9,23 @@ backend/static/         Interfaz web (index.html, css/, js/, vendor/chart.umd.js
 backend/sembrar_demo.py Carga un día de lecturas de ejemplo (para probar o presentar)
 firmware/main.py        Firmware del ESP32 (MicroPython)
 simulador.py            "ESP32 falso" para probar sin hardware
+docs/hardware.md        Cableado, pines y pruebas del hardware real
+docs/esquema.svg        Esquema de conexiones (una sola protoboard)
 ```
+
+## Hardware (resumen)
+
+| Componente | Pin ESP32 | Nota |
+|---|---|---|
+| DS18B20 DATA | **GPIO 18** | Pull-up de 4.7 kΩ a 3.3 V |
+| DS18B20 VCC / GND | 3V3 / GND | Bornera de 3 pines |
+| MOSFET (gate) o relé (IN) | **GPIO 19** | 220 Ω al gate, 10 kΩ gate–GND, diodo 1N4007 |
+| LED rojo | **GPIO 21** | 330 Ω a GND |
+| Ventilador 12 V | +12 V y drain del MOSFET | **Nunca directo a un GPIO** |
+
+Detalle completo, distribución en la protoboard y pruebas: [`docs/hardware.md`](docs/hardware.md).
+Si no hay MOSFET ni relé, el firmware puede funcionar en modo `solo_led` (el
+ventilador queda directo a 12 V y el LED solo indica la orden).
 
 ## Cómo ejecutarlo
 ```
@@ -25,7 +41,9 @@ La interfaz también se abre desde otro equipo de la red: `http://IP_DEL_PC:5000
 ## API (las rutas del primer avance se mantienen)
 | Método y ruta | Uso |
 |---|---|
-| POST /lecturas | ESP32 envía `{id_vitrina, temperatura, ventilador}` o `{id_vitrina, error:"sensor"}`; responde `{estado, ventilador, intervalo, modo}` |
+| POST /lecturas | ESP32 envía `{id_vitrina, temperatura, ventilador}` o `{id_vitrina, error:"sensor"}`; responde `{estado, ventilador, led, salida, sensor_ok, intervalo, modo}` |
+| GET /hardware | Mapa de pines y notas de cableado (JSON) |
+| GET /salud | Prueba de conectividad del ESP32 |
 | GET /lecturas?fecha&desde&hasta&despues_de | Historial por fecha y hora |
 | DELETE /lecturas | Eliminar historial |
 | GET /estado | Estado completo: lectura, semáforo, conexión, configuración |
