@@ -1,5 +1,9 @@
 # main.py - Firmware del ESP32 (MicroPython) - Monitor de Vitrina
 #
+# LEGADO: esta es la versión para ESP32. La versión activa del proyecto usa
+# Arduino UNO R3 (firmware/arduino_uno/arduino_uno.ino) y el puente USB-serie
+# (puente_serial.py). Se conserva como referencia para una futura versión WiFi.
+#
 # Hardware (una sola protoboard):
 #   DS18B20 : VCC -> 3.3 V, GND -> GND, DATA -> GPIO 18
 #             Resistencia de 4.7 kOhm entre DATA y 3.3 V (pull-up obligatorio).

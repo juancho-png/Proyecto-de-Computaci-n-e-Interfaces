@@ -1,7 +1,7 @@
 # app.py - Backend (Flask + SQLite) + interfaz web
-# Recibe las lecturas del ESP32, las guarda, las evalúa según el tipo de vitrina,
-# genera alertas, le responde al ESP32 si debe encender el ventilador y sirve la
-# interfaz web (carpeta static/).
+# Recibe las lecturas de la placa (Arduino por USB o ESP32 por WiFi), las guarda,
+# las evalúa según el tipo de vitrina, genera alertas, le responde a la placa si
+# debe encender el ventilador y sirve la interfaz web (carpeta static/).
 #
 # Ejecutar:  python app.py      (queda escuchando en el puerto 5000)
 # Interfaz:  http://127.0.0.1:5000/
@@ -21,35 +21,45 @@ TIEMPO_MAX_RECUPERACION_MIN = 15  # minutos fuera de rango antes de pedir revisi
 MODOS = ("auto", "manual", "apagado")
 INTERVALOS_VALIDOS = (10, 30, 60)
 LECTURAS_INVALIDAS = (-127.0, 85.0)   # valores que entrega el DS18B20 cuando falla o se reinicia
-VERSION = "1.1"
+VERSION = "1.2"
 
-# Mapa de hardware real (una sola protoboard). El ESP32 solo entrega la señal:
-# el ventilador de 12 V se conmuta con MOSFET o relé, nunca directo desde un GPIO.
+# Mapa de hardware real (una sola protoboard). El Arduino UNO R3 solo entrega
+# la señal: el ventilador de 12 V se conmuta con MOSFET o relé, nunca directo
+# desde un pin digital. La conexión al backend es por USB serie.
 HARDWARE = {
-    "placa": "ESP32 DevKit V1",
-    "alimentacion_esp32": "USB 5 V. No conectar los 12 V del ventilador al ESP32.",
+    "placa": "Arduino UNO R3",
+    "nivel_logico": "5 V",
+    "alimentacion_placa": "USB 5 V. No conectar los 12 V del ventilador al Arduino.",
+    "conexion_backend": "USB serie al PC; ejecutar puente_serial.py",
     "sensor": {
         "modelo": "DS18B20 (sonda impermeable de 3 hilos)",
-        "pin_datos": 18,
-        "alimentacion": "3.3 V",
+        "pin_datos": 2,
+        "alimentacion": "5 V",
         "pull_up_ohm": 4700,
-        "bornera": "3 pines: 1 = 3V3, 2 = DATA (GPIO 18), 3 = GND",
+        "bornera": "3 pines: 1 = 5V, 2 = DATA (D2), 3 = GND",
     },
     "actuador": {
-        "tipo": "MOSFET canal N (IRLZ44N / IRL540N) o módulo relé",
-        "pin_senal": 19,
+        "tipo": "MOSFET canal N logic-level (IRLZ44N / IRL540N) o módulo relé",
+        "pin_senal": 3,
         "logica": "activo en alto para MOSFET; activo en bajo para relé",
         "fuente_ventilador": "12 V DC (rojo +, negro -)",
         "proteccion": "Diodo 1N4007 en paralelo con el ventilador, cátodo a +12 V",
         "gnd_comun": True,
+        "nota": "Un IRF540N común puede no abrir bien con 5 V en el gate; usar IRLZ44N o IRL540N.",
     },
     "led": {
-        "pin": 21,
+        "pin": 4,
         "color": "rojo",
         "resistencia_ohm": 330,
         "funcion": "Indicador de ventilador encendido / enfriamiento activo",
     },
-    "pines_a_evitar": [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 34, 35, 36, 39],
+    "pines_a_evitar": [0, 1],
+    "pines_reservados": {"0": "RX del USB serie", "1": "TX del USB serie"},
+    "protocolo_serial": {
+        "baudios": 115200,
+        "arduino_a_pc": ["L,<temperatura>,<ventilador>,<sensor_ok>", "E,<ventilador>"],
+        "pc_a_arduino": ["V,<0|1>", "I,<segundos>"],
+    },
 }
 
 app = Flask(__name__, static_folder=os.path.join(BASE, "static"), static_url_path="/static")
@@ -93,7 +103,7 @@ class Vitrina:
         return ventilador_actual
 
     def orden_ventilador(self, temperatura, ventilador_actual):
-        """Orden final para el ESP32 según el modo elegido en la interfaz."""
+        """Orden final para la placa según el modo elegido en la interfaz."""
         if self.modo == "apagado":
             return False
         if self.modo == "manual":
@@ -289,13 +299,13 @@ def info_hardware():
 
 @app.get("/salud")
 def salud():
-    """Prueba rápida de conectividad desde el ESP32 (no requiere base de datos)."""
+    """Prueba rápida de conectividad desde el puente o la placa (no usa la base de datos)."""
     return jsonify(ok=True, servicio="monitor-vitrina", version=VERSION, hora=ahora())
 
 
-# ======================= Endpoints del ESP32 =======================
-def _respuesta_esp32(vitrina, estado, ventilador, sensor_ok=True):
-    """Respuesta común al ESP32. 'led' es un alias de 'ventilador': el LED rojo
+# ======================= Endpoints de la placa =======================
+def _respuesta_placa(vitrina, estado, ventilador, sensor_ok=True):
+    """Respuesta común a la placa. 'led' es un alias de 'ventilador': el LED rojo
     indica que la orden de enfriamiento está activa."""
     encendido = bool(ventilador)
     return jsonify(
@@ -334,7 +344,7 @@ def recibir_lectura():
     db = get_db()
     ventilador_actual = bool(datos.get("ventilador", False))
 
-    # El ESP32 avisa que el sensor falló con {"id_vitrina": 1, "error": "sensor"}
+    # La placa avisa que el sensor falló con {"id_vitrina": 1, "error": "sensor"}
     temperatura = None
     if not datos.get("error"):
         try:
@@ -358,7 +368,7 @@ def recibir_lectura():
         db.execute("UPDATE vitrinas SET ultimo_contacto=? WHERE id_vitrina=?", (ahora(), id_vitrina))
         db.commit()
         orden = {"apagado": False, "manual": vitrina.ventilador_manual}.get(vitrina.modo, ventilador_actual)
-        return _respuesta_esp32(vitrina, "SENSOR_ERROR", orden, sensor_ok=False)
+        return _respuesta_placa(vitrina, "SENSOR_ERROR", orden, sensor_ok=False)
 
     estado = vitrina.evaluar_estado(temperatura)
     orden_ventilador = vitrina.orden_ventilador(temperatura, ventilador_actual)
@@ -383,7 +393,7 @@ def recibir_lectura():
         alerta.notificar_usuario()
 
     db.commit()
-    return _respuesta_esp32(vitrina, estado, orden_ventilador)
+    return _respuesta_placa(vitrina, estado, orden_ventilador)
 
 
 # ======================= Endpoints de la interfaz =======================
@@ -431,7 +441,7 @@ def estado_actual():
                       (id_vitrina,)).fetchone()
     ahora_dt = datetime.now()
 
-    # ¿El ESP32 sigue enviando datos? (tolera 3 intervalos de lectura)
+    # ¿La placa sigue enviando datos? (tolera 3 intervalos de lectura)
     contacto = a_datetime(fila["ultimo_contacto"])
     segundos_sin_datos = int((ahora_dt - contacto).total_seconds()) if contacto else None
     conectado = segundos_sin_datos is not None and segundos_sin_datos <= vitrina.intervalo_s * 3 + 5
@@ -465,7 +475,7 @@ def estado_actual():
             fuera_desde = primera["timestamp"]
             minutos_fuera = int((ahora_dt - a_datetime(fuera_desde)).total_seconds() // 60)
 
-    # Orden pendiente: el ESP32 aún no recibió la orden que corresponde al modo actual
+    # Orden pendiente: la placa aún no recibió la orden que corresponde al modo actual
     orden_pendiente = False
     if ultima_d and conectado:
         if vitrina.modo == "apagado":
@@ -559,7 +569,7 @@ def guardar_configuracion():
 @app.post("/ventilador")
 def ordenar_ventilador():
     """Cambia el modo (auto/manual/apagado) y/o enciende o apaga el ventilador en modo manual.
-    El ESP32 recibe la orden en su próxima lectura (campo 'ventilador' de la respuesta)."""
+    La placa recibe la orden en su próxima lectura (campo 'ventilador' de la respuesta)."""
     datos = request.get_json(silent=True) or {}
     id_vitrina = int(datos.get("id_vitrina", 1))
     vitrina = cargar_vitrina(id_vitrina)
@@ -618,7 +628,7 @@ def resumen_alertas():
         "SELECT COUNT(*) FROM alertas WHERE id_vitrina=? AND reconocida=0", (id_vitrina,)).fetchone()[0]
 
     # Tiempo fuera de rango hoy: suma de los intervalos entre lecturas no normales.
-    # Un hueco mayor a 3 intervalos (ESP32 sin conexión) no se cuenta como tiempo fuera de rango.
+    # Un hueco mayor a 3 intervalos (placa sin conexión) no se cuenta como tiempo fuera de rango.
     vitrina = cargar_vitrina(id_vitrina)
     tope = (vitrina.intervalo_s if vitrina else 30) * 3
     lecturas = db.execute(
@@ -648,5 +658,5 @@ def reconocer_alerta(id_alerta):
 init_db()
 
 if __name__ == "__main__":
-    # host 0.0.0.0 permite que el ESP32 (en la misma red WiFi) llegue al servidor
+    # host 0.0.0.0 permite que el puente (o un ESP32 en la misma red) llegue al servidor
     app.run(host="0.0.0.0", port=5000, debug=False)

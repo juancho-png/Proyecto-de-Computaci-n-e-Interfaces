@@ -1,4 +1,4 @@
-# simulador.py - Hace de "ESP32 falso" para probar el backend sin hardware.
+# simulador.py - Hace de "placa falsa" (Arduino + puente) para probar el backend sin hardware.
 # Primero iniciar el backend (python app.py) y luego:  python simulador.py
 # La temperatura sube sola; cuando el backend ordena encender el ventilador, baja.
 

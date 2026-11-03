@@ -1,36 +1,53 @@
-# Hardware real — ESP32 + DS18B20 + ventilador 12 V
+# Hardware real — Arduino UNO R3 + DS18B20 + ventilador 12 V
 
 Este documento adapta el proyecto a los componentes disponibles y a **una sola
-protoboard**. El backend no cambia su lógica de control: el ESP32 sigue enviando
-la temperatura a `POST /lecturas` y el servidor responde si el ventilador debe
-encenderse. Lo que cambia es el **mapa de pines** y la forma de conmutar el
-ventilador de 12 V.
+protoboard**, usando un **Arduino UNO R3** en lugar del ESP32.
 
-## 1. Advertencia importante
+## 1. Cambio de arquitectura: el UNO no tiene WiFi
 
-Un GPIO del ESP32 entrega como máximo unos **12 mA** (40 mA absolutos) y 3.3 V.
-**No puede alimentar ni conmutar un ventilador de 12 V directamente.** Si se
-conecta el ventilador a un GPIO, el ESP32 se reinicia o se daña.
+El Arduino UNO R3 no se conecta solo a la red. La arquitectura queda así:
+
+```
+Arduino UNO R3 ──USB──> PC ──HTTP──> Backend Flask/SQLite ──> Interfaz web
+   (mide y actúa)      (puente_serial.py)
+```
+
+- El Arduino lee el DS18B20 y controla el ventilador y el LED.
+- Envía cada lectura por **USB serie** (`L,<temperatura>,<ventilador>,<sensor_ok>`).
+- `puente_serial.py` la recibe en el PC, la publica en `POST /lecturas` y le
+  devuelve al Arduino la orden `V,<0|1>` y el intervalo `I,<segundos>`.
+- El backend y la interfaz web **no cambian**; siguen funcionando igual.
+
+> Si más adelante quieren WiFi sin PC, se puede agregar un módulo ESP-01/WiFi
+> shield o volver a la versión ESP32 que quedó en `firmware/esp32/main.py`.
+> Con los componentes actuales, el puente USB es la opción más simple y estable.
+
+## 2. Advertencia importante
+
+Un pin digital del Arduino UNO entrega **5 V y como máximo 20–40 mA**. **No puede
+alimentar ni conmutar un ventilador de 12 V directamente.** Si se conecta el
+ventilador a un pin, el Arduino se reinicia o se daña.
 
 Para encenderlo y apagarlo se necesita **un interruptor electrónico**:
 
 | Opción | Componentes | Cuándo usarla |
 |---|---|---|
-| **MOSFET canal N** (recomendado) | IRLZ44N o IRL540N, resistencia 220 Ω, resistencia 10 kΩ, diodo 1N4007 | Silencioso, rápido, sin desgaste mecánico |
+| **MOSFET canal N logic-level** (recomendado) | IRLZ44N o IRL540N, resistencia 220 Ω, resistencia 10 kΩ, diodo 1N4007 | Silencioso, rápido, sin desgaste mecánico |
 | **Módulo relé** | Relé de 5 V con optoacoplador | Si ya lo tienen o prefieren aislamiento galvánico |
 | **Solo LED** | Ninguno adicional | Demostración: el ventilador queda directo a 12 V y el LED solo indica la orden |
 
 > Con los componentes listados (bornera, protoboard, DS18B20, jumpers, fuente
 > 12 V, LED rojo y una resistencia) **no es posible conmutar el ventilador**.
 > Hace falta el MOSFET (o el relé) y, como mínimo, el diodo de protección.
-> Si no se consigue, usar `MODO_SALIDA = "solo_led"` en el firmware: el sistema
-> mide y registra, pero el ventilador no se controla.
+> Si no se consigue, usar `TIPO_SALIDA 2` en el firmware: el sistema mide y
+> registra, pero el ventilador no se controla.
 
 ### Materiales y cantidades
 
 | Material | Cant. | Para qué |
 |---|---|---|
-| ESP32 DevKit V1 | 1 | Control y WiFi |
+| Arduino UNO R3 | 1 | Control y lectura |
+| Cable USB | 1 | Alimentación y comunicación con el PC |
 | Protoboard | 1 | Montaje |
 | DS18B20 (sonda 3 hilos) | 1 | Medir temperatura |
 | Bornera 3 pines | 1 | Conectar el DS18B20 |
@@ -45,31 +62,28 @@ Para encenderlo y apagarlo se necesita **un interruptor electrónico**:
 | MOSFET IRLZ44N / IRL540N | 1 | Conmutar el ventilador |
 | Diodo 1N4007 | 1 | Protección del MOSFET |
 
-> **Ojo con la resistencia única:** el DS18B20 necesita 4.7 kΩ entre DATA y
-> 3.3 V; sin ella el sensor no aparece en el bus. El LED necesita 330 Ω y el
-> MOSFET 220 Ω + 10 kΩ. Si solo hay una resistencia, no alcanza para el montaje
-> completo: prioriza la de 4.7 kΩ para el sensor y usa `solo_led` hasta
+> **Ojo con la resistencia única:** el DS18B20 necesita 4.7 kΩ entre DATA y 5 V;
+> sin ella el sensor no aparece en el bus. El LED necesita 330 Ω y el MOSFET
+> 220 Ω + 10 kΩ. Si solo hay una resistencia, no alcanza para el montaje
+> completo: prioriza la de 4.7 kΩ para el sensor y usa `TIPO_SALIDA 2` hasta
 > conseguir las demás.
 
-## 2. Mapa de pines (una sola protoboard)
+## 3. Mapa de pines (Arduino UNO R3)
 
-Se eligieron **GPIO 18, 19 y 21** porque están juntos en el lado derecho del
-DevKit V1, no son pines de arranque (*strapping*) y no se usan para WiFi, para
-la memoria flash ni para el puerto serie USB. Así el cableado cabe en una sola
-protoboard y no se cruza con los pines de alimentación.
+Se eligieron **D2, D3 y D4** porque están juntos en el header digital, no se
+usan para el USB serie (D0/D1) y dejan libre el resto de pines. El Arduino
+trabaja a **5 V**, así que el DS18B20 se alimenta a 5 V y el pull-up también va
+a 5 V.
 
-Evitar: **0, 1, 2, 3, 5, 6–11, 12, 15, 20, 34–39** (arranque, flash, UART0 o
-solo entrada).
-
-| Componente | Terminal | Pin ESP32 | Notas |
+| Componente | Terminal | Pin Arduino | Notas |
 |---|---|---|---|
-| **DS18B20** | VCC (rojo) | **3V3** | Bornera, pin 1 |
-| | DATA (amarillo) | **GPIO 18** | Bornera, pin 2 |
+| **DS18B20** | VCC (rojo) | **5V** | Bornera, pin 1 |
+| | DATA (amarillo) | **D2** | Bornera, pin 2 |
 | | GND (negro) | **GND** | Bornera, pin 3 |
-| **Pull-up DS18B20** | 4.7 kΩ | entre **3V3** y **GPIO 18** | Obligatoria |
-| **LED rojo** | Ánodo | **GPIO 21** | A través de 330 Ω |
+| **Pull-up DS18B20** | 4.7 kΩ | entre **5V** y **D2** | Obligatoria |
+| **LED rojo** | Ánodo | **D4** | A través de 330 Ω |
 | | Cátodo | **GND** | |
-| **MOSFET IRLZ44N** | Gate (G) | **GPIO 19** | A través de 220 Ω |
+| **MOSFET IRLZ44N** | Gate (G) | **D3** | A través de 220 Ω |
 | | Gate–Source | **10 kΩ a GND** | Evita encendidos falsos |
 | | Source (S) | **GND común** | |
 | | Drain (D) | **Negro del ventilador** | |
@@ -78,112 +92,151 @@ solo entrada).
 | **Diodo 1N4007** | Cátodo (raya) | **+12 V** | En paralelo con el ventilador |
 | | Ánodo | **Drain / negro del ventilador** | Protege el MOSFET |
 | **Fuente 12 V** | Rojo (+) | **+12 V** del ventilador | Verificar polaridad |
-| | Negro (–) | **GND común** | Unir con GND del ESP32 |
-| **ESP32** | Alimentación | **USB 5 V** | No conectar los 12 V al ESP32 |
+| | Negro (–) | **GND común** | Unir con GND del Arduino |
+| **Arduino** | Alimentación | **USB 5 V** | No conectar los 12 V al Arduino |
+
+> **Pines reservados:** D0 (RX) y D1 (TX) son el USB serie que usa
+> `puente_serial.py`. No conectar nada ahí.
+>
+> **MOSFET:** usar uno **logic-level** (IRLZ44N o IRL540N). Un IRF540N común
+> puede no abrir bien con solo 5 V en el gate.
 
 ### Alternativa con módulo relé
 
 | Relé | Conexión |
 |---|---|
-| `IN` | **GPIO 19** |
-| `VCC` | **5 V** (VIN del ESP32) |
+| `IN` | **D3** |
+| `VCC` | **5V** |
 | `GND` | **GND común** |
 | `COM` | **+12 V** de la fuente |
 | `NO` | **Rojo del ventilador** |
 | Negro del ventilador | **GND común** |
 
-En el firmware usar `MODO_SALIDA = "rele"` (muchos módulos son activos en bajo).
+En el firmware usar `#define TIPO_SALIDA 1` (muchos módulos son activos en bajo).
 
-## 3. Esquema
+## 4. Esquema
 
 ![Esquema de conexiones](esquema.svg)
 
 Versión en texto:
 
 ```
-ESP32                  Bornera 3 pines             DS18B20
-3V3    ───────────────  pin 1 (3V3)  ─────────────  rojo
-GPIO18 ───────────────  pin 2 (DATA) ─────────────  amarillo
+Arduino UNO            Bornera 3 pines             DS18B20
+5V     ───────────────  pin 1 (5V)   ─────────────  rojo
+D2     ───────────────  pin 2 (DATA) ─────────────  amarillo
 GND    ───────────────  pin 3 (GND)  ─────────────  negro
                         4.7 kΩ entre pin 1 y pin 2
 
-GPIO21 ── 330 Ω ── LED rojo ── GND
+D4 ── 330 Ω ── LED rojo ── GND
 
-GPIO19 ── 220 Ω ── G  MOSFET N  D ── negro del ventilador
-                       |         S ── GND
-                      10 kΩ
-                       |
-                      GND
+D3 ── 220 Ω ── G  MOSFET N  D ── negro del ventilador
+                  |         S ── GND
+                 10 kΩ
+                  |
+                 GND
 
 +12 V ──────────────── rojo del ventilador
 +12 V ── cátodo [1N4007] ánodo ── negro del ventilador
-negro de la fuente 12 V ─────── GND común con el ESP32
+negro de la fuente 12 V ─────── GND común con el Arduino
+
+Arduino ──USB──> PC (puente_serial.py + Flask)
 ```
 
-## 4. Distribución en la única protoboard
+## 5. Distribución en la única protoboard
 
-El ESP32 va **fuera** de la protoboard (es demasiado ancho); se conecta con
-jumpers. La protoboard se divide en tres zonas para no mezclar los 12 V con las
-señales de 3.3 V:
+El Arduino va **fuera** de la protoboard; se conecta con jumpers. La protoboard
+se divide en tres zonas para no mezclar los 12 V con las señales de 5 V:
 
 | Zona | Contenido | Recomendación |
 |---|---|---|
 | **A — izquierda** | Bornera de 3 pines, resistencia 4.7 kΩ, LED + 330 Ω | Mantener el sensor lejos del MOSFET |
 | **B — centro** | MOSFET, 220 Ω de gate, 10 kΩ gate–source | Cerca del ventilador |
 | **C — derecha** | Diodo 1N4007, salida al ventilador, entrada 12 V | Cables de 12 V cortos y cubiertos |
-| **Riel inferior** | **GND común** | Unir GND del ESP32 y negro de la fuente |
-| **Riel superior** | Solo **3.3 V** | **No** poner 12 V en este riel |
+| **Riel inferior** | **GND común** | Unir GND del Arduino y negro de la fuente |
+| **Riel superior** | Solo **5 V** | **No** poner 12 V en este riel |
 
 Pasos sugeridos:
 
-1. Con el ESP32 desconectado, montar la bornera y el pull-up de 4.7 kΩ.
+1. Con el Arduino desconectado, montar la bornera y el pull-up de 4.7 kΩ.
 2. Montar el LED con su resistencia de 330 Ω.
 3. Montar el MOSFET, el divisor de gate (220 Ω + 10 kΩ) y el diodo.
-4. Conectar primero **GND común**; después 3.3 V; al final los 12 V.
-5. Revisar con multímetro que no haya continuidad entre +12 V y 3.3 V/GND.
-6. Alimentar el ESP32 por USB y el ventilador con la fuente de 12 V.
+4. Conectar primero **GND común**; después 5 V; al final los 12 V.
+5. Revisar con multímetro que no haya continuidad entre +12 V y 5 V/GND.
+6. Alimentar el Arduino por USB y el ventilador con la fuente de 12 V.
 
-## 5. Firmware
+## 6. Firmware del Arduino
 
-En `firmware/main.py` ajustar:
+Archivo: **`firmware/arduino_uno/arduino_uno.ino`**
 
-```python
-WIFI_SSID = "TU_RED_WIFI"
-WIFI_CLAVE = "TU_CLAVE"
-URL_BACKEND = "http://IP_DEL_PC:5000/lecturas"
-ID_VITRINA = 1
+1. Abrir Arduino IDE.
+2. Instalar las librerías **OneWire** (Paul Stoffregen) y
+   **DallasTemperature** (Miles Burton) desde el Library Manager.
+3. Seleccionar **Arduino Uno** y el puerto COM donde apareció la placa.
+4. Ajustar el modo de salida al inicio del archivo:
 
-PIN_SENSOR = 18
-PIN_VENTILADOR = 19
-PIN_LED = 21
-
-MODO_SALIDA = "mosfet"   # "mosfet", "rele" o "solo_led"
+```cpp
+// 0 = MOSFET (activo en alto), 1 = relé (activo en bajo), 2 = solo LED
+#define TIPO_SALIDA 0
 ```
 
-- `"mosfet"`: GPIO 19 en alto enciende el ventilador.
-- `"rele"`: GPIO 19 en bajo enciende el relé.
-- `"solo_led"`: no se conmuta el ventilador; el LED refleja la orden del backend.
+5. Subir el sketch.
+6. Abrir el Monitor Serie a **115200 baudios** para ver `READY,Arduino UNO R3`
+   y las líneas `L,...`. **Cerrar el Monitor Serie** antes de ejecutar el
+   puente, porque el puerto solo lo puede usar un programa a la vez.
 
-El LED siempre se enciende cuando el backend ordena enfriar, aunque el modo sea
-`solo_led`. El firmware acepta la respuesta nueva (`salida.ventilador`) y la
-anterior (`ventilador`), así que sigue funcionando con versiones viejas del
-backend.
+El firmware también tiene una **regla local de respaldo**: si el PC/backend no
+responde durante unos 3 intervalos, enciende el ventilador sobre 6 °C y lo apaga
+con histéresis en 5 °C.
 
-Si el ESP32 no trae `urequests`, instalarlo desde el REPL con
-`mip.install("urequests")` o copiar `urequests.py` a la placa. Los módulos
-`onewire` y `ds18x20` vienen incluidos en el firmware estándar de MicroPython
-para ESP32.
+## 7. Puente USB-serie
 
-## 6. Backend adaptado
+Archivo: **`puente_serial.py`**
 
-Se agregaron dos rutas y campos nuevos, sin romper la API anterior:
+```bash
+pip install pyserial requests
+python puente_serial.py COM3          # Windows
+python puente_serial.py /dev/ttyUSB0  # Linux
+```
+
+Antes de ejecutarlo, el backend debe estar corriendo:
+
+```bash
+cd backend
+python app.py
+```
+
+El puente:
+
+1. Abre el puerto a 115200 baudios y espera 2 s (el Arduino se reinicia al abrir el puerto).
+2. Lee las líneas `L,...` o `E,...`.
+3. Las publica en `http://127.0.0.1:5000/lecturas`.
+4. Envía al Arduino `V,1`/`V,0` y `I,<segundos>` según la respuesta.
+
+Si el Arduino está en otro PC, cambia `URL_BACKEND` en `puente_serial.py` por la
+IP del servidor. Si el puerto no aparece en Windows, instalar el driver **CH340**
+(clones de UNO) o revisar el Administrador de dispositivos.
+
+### Protocolo
+
+| Dirección | Línea | Significado |
+|---|---|---|
+| Arduino → PC | `L,4.25,1,1` | Temperatura 4.25 °C, ventilador encendido, sensor OK |
+| Arduino → PC | `L,4.25,0,1` | Temperatura 4.25 °C, ventilador apagado, sensor OK |
+| Arduino → PC | `E,0` | Sensor desconectado, ventilador apagado |
+| PC → Arduino | `V,1` | Encender ventilador |
+| PC → Arduino | `V,0` | Apagar ventilador |
+| PC → Arduino | `I,30` | Leer cada 30 segundos |
+
+## 8. Backend adaptado
+
+Se mantiene la misma API y la misma base de datos. Las rutas nuevas son:
 
 | Ruta | Uso |
 |---|---|
-| `GET /hardware` | Devuelve el mapa de pines y las notas de cableado en JSON |
-| `GET /salud` | Prueba de conectividad para el ESP32 (sin tocar la base de datos) |
+| `GET /hardware` | Devuelve el mapa de pines del Arduino y el protocolo serie |
+| `GET /salud` | Prueba de conectividad del puente |
 
-La respuesta de `POST /lecturas` ahora incluye:
+La respuesta de `POST /lecturas` incluye:
 
 ```json
 {
@@ -198,12 +251,12 @@ La respuesta de `POST /lecturas` ahora incluye:
 ```
 
 `led` es un alias de `ventilador`: el LED rojo indica que la orden de
-enfriamiento está activa. No se modificó la base de datos; el historial sigue
-guardando el campo `ventilador`.
+enfriamiento está activa. El puente usa `ventilador` para enviar `V,1`/`V,0`.
+No se modificó el esquema de la base de datos.
 
-## 7. Pruebas antes de conectar todo
+## 9. Pruebas antes de conectar todo
 
-### 7.1 Fuente de 12 V
+### 9.1 Fuente de 12 V
 
 Con multímetro, medir la salida del cable del módem:
 
@@ -211,72 +264,69 @@ Con multímetro, medir la salida del cable del módem:
 - Identificar **rojo = positivo** y **negro = negativo**.
 - Si el cable es de corriente alterna (AC), **no usarlo**.
 
-### 7.2 DS18B20 solo
+### 9.2 DS18B20 solo
 
-En el REPL de MicroPython (Thonny o `mpremote`):
+Con el Arduino cargado con un ejemplo de `DallasTemperature` (o el firmware
+final), abrir el Monitor Serie a 115200 y verificar que aparezca una temperatura
+coherente. Si el sensor no aparece:
 
-```python
-import machine, onewire, ds18x20, time
-ds = ds18x20.DS18X20(onewire.OneWire(machine.Pin(18)))
-print("ROMs:", ds.scan())          # debe mostrar al menos una dirección
-ds.convert_temp()
-time.sleep_ms(750)
-print("T =", ds.read_temp(ds.scan()[0]), "C")
+- Revisar 5 V, GND y DATA en D2.
+- Revisar la resistencia de 4.7 kΩ entre DATA y 5 V.
+- Revisar que el cable no esté invertido.
+
+### 9.3 LED y MOSFET
+
+Con un sketch mínimo o con el firmware:
+
+```cpp
+digitalWrite(4, HIGH);   // LED encendido
+digitalWrite(4, LOW);    // LED apagado
+digitalWrite(3, HIGH);   // MOSFET: ventilador encendido
+digitalWrite(3, LOW);    // MOSFET: ventilador apagado
 ```
 
-Si `scan()` devuelve `[]`: falta el pull-up de 4.7 kΩ, los cables están
-cambiados o el sensor no recibe 3.3 V.
+Si usan relé activo en bajo, el ventilador se enciende con `digitalWrite(3, LOW)`.
 
-### 7.3 LED y MOSFET
-
-```python
-import machine
-led = machine.Pin(21, machine.Pin.OUT)
-led.value(1)      # LED encendido
-led.value(0)      # LED apagado
-
-gate = machine.Pin(19, machine.Pin.OUT)
-gate.value(1)     # el ventilador debe girar
-gate.value(0)     # el ventilador debe detenerse
-```
-
-### 7.4 Backend
+### 9.4 Puente y backend
 
 ```bash
-curl http://IP_DEL_PC:5000/salud
-curl http://IP_DEL_PC:5000/hardware
+curl http://127.0.0.1:5000/salud
+curl http://127.0.0.1:5000/hardware
 ```
 
-Simular una lectura alta:
+Luego ejecutar el puente y ver en la consola las líneas `T=... C | estado=...`.
+También se puede simular una lectura alta sin Arduino:
 
 ```bash
-curl -X POST http://IP_DEL_PC:5000/lecturas ^
-  -H "Content-Type: application/json" ^
-  -d "{\"id_vitrina\":1,\"temperatura\":9,\"ventilador\":false}"
+curl -X POST http://127.0.0.1:5000/lecturas -H "Content-Type: application/json" -d "{\"id_vitrina\":1,\"temperatura\":9,\"ventilador\":false}"
 ```
 
-La respuesta debe traer `"ventilador": true` y `"led": true`; el ventilador
-debe encenderse. Luego enviar `temperatura: 4` y comprobar que se apaga.
+Debe responder `"ventilador": true` y `"led": true`. Con `temperatura: 4` debe
+apagar.
 
-## 8. Problemas comunes
+## 10. Problemas comunes
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| `scan()` vacío | Falta pull-up, cables invertidos | 4.7 kΩ entre DATA y 3.3 V; revisar rojo/amarillo/negro |
-| Lectura 85 °C o −127 °C | Sensor sin alimentación o lectura inválida | Revisar 3.3 V, GND y contacto en la bornera |
-| LED enciende pero el ventilador no | MOSFET mal cableado o sin GND común | Gate a GPIO 19, source a GND, drain al negro del ventilador |
-| Ventilador siempre encendido | Gate flotante, drain/source invertidos o relé activo en bajo | Poner 10 kΩ gate–source; revisar pines; usar `MODO_SALIDA = "rele"` |
-| El ESP32 se reinicia al arrancar el ventilador | 12 V conectado al ESP32 o falta diodo | Alimentar por USB, GND común y 1N4007 en paralelo con el ventilador |
-| La interfaz dice "sin conexión" | IP incorrecta, firewall o WiFi distinto | Probar `/salud` desde el navegador; misma red; abrir puerto 5000 |
+| No aparece el puerto COM | Driver CH340 o cable solo de carga | Instalar driver; usar cable USB de datos |
+| Monitor Serie muestra basura | Baudios incorrectos | Poner 115200 |
+| `puente_serial.py` no abre el puerto | Monitor Serie abierto | Cerrar el Monitor Serie |
+| DS18B20 marca `-127` o `85` | Sin pull-up, cables invertidos o sin 5 V | 4.7 kΩ entre DATA y 5 V; revisar cableado |
+| LED enciende pero el ventilador no | MOSFET mal cableado o sin GND común | Gate a D3, source a GND, drain al negro del ventilador |
+| Ventilador siempre encendido | Gate flotante, drain/source invertidos o relé activo en bajo | Poner 10 kΩ gate–source; revisar pines; usar `TIPO_SALIDA 1` |
+| El Arduino se reinicia al arrancar el ventilador | 12 V conectado al Arduino o falta diodo | Alimentar por USB, GND común y 1N4007 en paralelo con el ventilador |
+| La interfaz dice "sin conexión" | Backend apagado, IP incorrecta o firewall | Iniciar `app.py`; probar `/salud`; abrir puerto 5000 |
 | El ventilador gira al revés | Polaridad del ventilador | Invertir rojo/negro del ventilador (no de la fuente) |
 
-## 9. Seguridad
+## 11. Seguridad
 
-- No conectar **12 V** a los pines **3V3, 5V, GPIO** del ESP32.
-- Unir siempre el **GND** de la fuente de 12 V con el **GND** del ESP32.
+- No conectar **12 V** a los pines **5V, 3V3, D2, D3, D4** del Arduino.
+- Unir siempre el **GND** de la fuente de 12 V con el **GND** del Arduino.
 - El diodo **1N4007** no es opcional: sin él, el motor genera picos que pueden
-  destruir el MOSFET o reiniciar el ESP32.
+  destruir el MOSFET o reiniciar el Arduino.
 - No dejar cables pelados de 12 V sobre la protoboard; usar terminales o
   cubrir las uniones.
 - Si se usa relé, preferir módulo con optoacoplador y no alimentar la bobina
-  desde un GPIO.
+  desde un pin digital.
+- El Arduino UNO se alimenta por **USB**; no usar los 12 V del ventilador para
+  alimentarlo.

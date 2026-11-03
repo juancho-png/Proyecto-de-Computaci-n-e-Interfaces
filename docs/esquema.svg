@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="titulo desc">
-  <title id="titulo">Conexiones ESP32, DS18B20, LED y ventilador 12 V</title>
-  <desc id="desc">Diagrama lógico de cableado sobre una sola protoboard: DS18B20 en GPIO 18, MOSFET en GPIO 19, LED en GPIO 21, fuente de 12 V para el ventilador y GND común.</desc>
+  <title id="titulo">Conexiones Arduino UNO R3, DS18B20, LED y ventilador 12 V</title>
+  <desc id="desc">Diagrama lógico de cableado sobre una sola protoboard: Arduino UNO R3 con DS18B20 en D2, MOSFET en D3, LED en D4, fuente de 12 V para el ventilador, GND común y USB al PC con puente_serial.py.</desc>
 
   <style>
     .fondo { fill: #f7f9fc; }
@@ -43,28 +43,28 @@
 
   <rect class="fondo" width="1200" height="900"/>
   <text class="titulo" x="40" y="40">Monitor de Vitrina — conexiones del hardware real</text>
-  <text class="subtitulo" x="40" y="64">Una sola protoboard · DS18B20 en GPIO 18 · MOSFET en GPIO 19 · LED en GPIO 21 · fuente de 12 V solo para el ventilador</text>
+  <text class="subtitulo" x="40" y="64">Una sola protoboard · Arduino UNO R3 (5 V) · DS18B20 en D2 · MOSFET en D3 · LED en D4 · USB al PC con puente_serial.py</text>
 
-  <!-- ================= ESP32 ================= -->
+  <!-- ================= ARDUINO UNO R3 ================= -->
   <rect class="placa" x="50" y="100" width="230" height="540" rx="14"/>
-  <text class="placa-texto" x="165" y="132" text-anchor="middle">ESP32 DevKit V1</text>
-  <text class="placa-chico" x="165" y="150" text-anchor="middle">vista lógica de pines</text>
+  <text class="placa-texto" x="165" y="132" text-anchor="middle">Arduino UNO R3</text>
+  <text class="placa-chico" x="165" y="150" text-anchor="middle">5 V lógico · USB a PC</text>
 
   <!-- Pines: centro en y = 170, 220, 300, 370, 440, 510, 560 -->
   <rect class="pin" x="270" y="162" width="20" height="16"/>
-  <text class="pin-texto" x="260" y="175" text-anchor="end">3V3</text>
+  <text class="pin-texto" x="260" y="175" text-anchor="end">5V</text>
 
   <rect class="pin" x="270" y="212" width="20" height="16"/>
   <text class="pin-texto" x="260" y="225" text-anchor="end">GND</text>
 
   <rect class="pin" x="270" y="292" width="20" height="16"/>
-  <text class="pin-texto" x="260" y="305" text-anchor="end">GPIO 18</text>
+  <text class="pin-texto" x="260" y="305" text-anchor="end">D2</text>
 
   <rect class="pin" x="270" y="362" width="20" height="16"/>
-  <text class="pin-texto" x="260" y="375" text-anchor="end">GPIO 19</text>
+  <text class="pin-texto" x="260" y="375" text-anchor="end">D3</text>
 
   <rect class="pin" x="270" y="432" width="20" height="16"/>
-  <text class="pin-texto" x="260" y="445" text-anchor="end">GPIO 21</text>
+  <text class="pin-texto" x="260" y="445" text-anchor="end">D4</text>
 
   <rect class="pin" x="270" y="502" width="20" height="16"/>
   <text class="pin-texto" x="260" y="515" text-anchor="end">5V</text>
@@ -72,8 +72,9 @@
   <rect class="pin" x="270" y="552" width="20" height="16"/>
   <text class="pin-texto" x="260" y="565" text-anchor="end">GND</text>
 
-  <text class="placa-chico" x="165" y="600" text-anchor="middle">Alimentación: USB 5 V</text>
-  <text class="placa-chico" x="165" y="618" text-anchor="middle">No conectar 12 V aquí</text>
+  <text class="placa-chico" x="165" y="596" text-anchor="middle">USB 5 V → PC</text>
+  <text class="placa-chico" x="165" y="614" text-anchor="middle">puente_serial.py</text>
+  <text class="placa-chico" x="165" y="632" text-anchor="middle">No conectar 12 V aquí</text>
 
   <!-- ================= PROTOBOARD ================= -->
   <rect class="board" x="340" y="90" width="820" height="650" rx="16"/>
@@ -86,23 +87,23 @@
   <circle cx="430" cy="170" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
   <circle cx="430" cy="210" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
   <circle cx="430" cy="250" r="8" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
-  <text class="texto-chico" x="446" y="158">1 · 3V3</text>
+  <text class="texto-chico" x="446" y="158">1 · 5V</text>
   <text class="texto-chico" x="446" y="198">2 · DATA</text>
   <text class="texto-chico" x="446" y="238">3 · GND</text>
 
-  <!-- 3V3 y GND desde el ESP32 -->
+  <!-- 5V y GND desde el Arduino -->
   <path class="cable cable-rojo" d="M290 170 H380"/>
   <path class="cable cable-negro" d="M290 220 H350 V250 H362"/>
   <path class="cable cable-negro" d="M378 250 H380"/>
 
-  <!-- DATA: GPIO18 rodea por abajo para no cruzar el GND -->
+  <!-- DATA: D2 rodea por abajo para no cruzar el GND -->
   <path class="cable cable-amarillo" d="M290 300 H370 V210 H380"/>
 
   <!-- ================= DS18B20 ================= -->
   <rect class="caja-sensor" x="650" y="140" width="190" height="130" rx="10"/>
   <text class="texto-sensor" x="745" y="172" text-anchor="middle">DS18B20</text>
   <text class="texto-chico" x="745" y="192" text-anchor="middle">sonda impermeable, 3 hilos</text>
-  <text class="texto-chico" x="745" y="218" text-anchor="middle" fill="#b91c1c">rojo = 3V3</text>
+  <text class="texto-chico" x="745" y="218" text-anchor="middle" fill="#b91c1c">rojo = 5V</text>
   <text class="texto-chico" x="745" y="238" text-anchor="middle" fill="#a16207">amarillo = DATA</text>
   <text class="texto-chico" x="745" y="258" text-anchor="middle" fill="#111827">negro = GND</text>
 
@@ -111,7 +112,7 @@
   <path class="cable cable-amarillo" d="M480 210 H650"/>
   <path class="cable cable-negro" d="M480 250 H650"/>
 
-  <!-- Pull-up 4.7k entre 3V3 (170) y DATA (210) -->
+  <!-- Pull-up 4.7k entre 5V (170) y DATA (210) -->
   <path class="cable cable-azul" d="M530 170 V182"/>
   <rect class="componente" x="524" y="182" width="12" height="18" rx="2"/>
   <path class="cable cable-azul" d="M530 200 V210"/>
@@ -210,11 +211,11 @@
   <!-- ================= GND COMUN ================= -->
   <path class="cable cable-negro" d="M290 560 H320 V660 H1120"/>
   <circle class="nodo" cx="340" cy="660" r="4"/>
-  <text class="texto" x="730" y="684" text-anchor="middle">GND común: ESP32 + fuente de 12 V + sensor</text>
+  <text class="texto" x="730" y="684" text-anchor="middle">GND común: Arduino + fuente de 12 V + sensor</text>
 
   <!-- ================= AVISO ================= -->
   <rect class="aviso" x="50" y="760" width="1110" height="46" rx="10"/>
-  <text class="aviso-texto" x="605" y="789" text-anchor="middle">El GPIO del ESP32 no alimenta el ventilador: usa MOSFET o relé. GND común obligatorio. Alimenta el ESP32 por USB.</text>
+  <text class="aviso-texto" x="605" y="789" text-anchor="middle">El pin del Arduino no alimenta el ventilador: usa MOSFET o relé. GND común obligatorio. Alimenta el Arduino por USB.</text>
 
   <!-- ================= LEYENDA ================= -->
   <line class="cable cable-rojo" x1="70" y1="832" x2="105" y2="832"/>
@@ -227,10 +228,10 @@
   <text class="leyenda" x="342" y="836">DATA 1-Wire</text>
 
   <line class="cable cable-verde" x1="460" y1="832" x2="495" y2="832"/>
-  <text class="leyenda" x="502" y="836">señal GPIO 19</text>
+  <text class="leyenda" x="502" y="836">señal D3</text>
 
   <line class="cable cable-naranja" x1="640" y1="832" x2="675" y2="832"/>
-  <text class="leyenda" x="682" y="836">LED GPIO 21</text>
+  <text class="leyenda" x="682" y="836">LED D4</text>
 
   <line class="cable cable-azul" x1="800" y1="832" x2="835" y2="832"/>
   <text class="leyenda" x="842" y="836">pull-up / diodo</text>
