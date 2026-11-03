@@ -5,7 +5,7 @@ import { api, ID_VITRINA } from "./api.js";
 import { aviso } from "./ui.js";
 import { segundosDelDia } from "./util.js";
 
-const PERIODO_MS = 3000;
+const PERIODO_MS = 1000;
 
 export class Monitor {
   constructor() {

@@ -49,7 +49,7 @@
 
 #define BAUDIOS         115200
 #define INTERVALO_INICIAL_S 30
-#define INTERVALO_MIN_S 10
+#define INTERVALO_MIN_S 2
 #define INTERVALO_MAX_S 60
 
 // Regla local de respaldo (si el PC/backend no responde)
@@ -165,6 +165,7 @@ void setup() {
   aplicarLed(false);
 
   sensor.begin();
+  sensor.setWaitForConversion(false);   // <- nueva
   sensor.setResolution(12);
 
   Serial.println("READY,Arduino UNO R3");

@@ -19,7 +19,7 @@ HISTERESIS = 1.0                 # °C por debajo del máximo para apagar el ven
 MARGEN_AMARILLO = 0.5            # °C al límite para mostrar el semáforo en amarillo
 TIEMPO_MAX_RECUPERACION_MIN = 15  # minutos fuera de rango antes de pedir revisión manual (por definir)
 MODOS = ("auto", "manual", "apagado")
-INTERVALOS_VALIDOS = (10, 30, 60)
+INTERVALOS_VALIDOS = (2, 5, 10, 30, 60)
 LECTURAS_INVALIDAS = (-127.0, 85.0)   # valores que entrega el DS18B20 cuando falla o se reinicia
 VERSION = "1.2"
 
