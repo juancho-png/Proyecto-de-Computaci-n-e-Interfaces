@@ -61,6 +61,18 @@ function pasoEjeX(duracion) {
   return pasos.find((p) => duracion / p <= 7) || 21600;
 }
 
+/** Separación típica (mediana) entre lecturas consecutivas, en segundos. */
+function separacionTipica(lecturas) {
+  const diferencias = [];
+  for (let i = 1; i < lecturas.length; i++) {
+    const d = lecturas[i].x - lecturas[i - 1].x;
+    if (Number.isFinite(d) && d > 0) diferencias.push(d);
+  }
+  if (!diferencias.length) return 0;
+  diferencias.sort((a, b) => a - b);
+  return diferencias[Math.floor((diferencias.length - 1) / 2)];
+}
+
 export const COLORES_MARCADOR = { ventilador: COLOR_AZUL, fuera: COLOR_MAX };
 
 export class GraficaTemperatura {
@@ -75,10 +87,14 @@ export class GraficaTemperatura {
    */
   actualizar(lecturas, opciones) {
     const { umbralMin, umbralMax, marcadores = [], huecoS = 90 } = opciones;
+    // El hueco se compara con la separación real de las lecturas, no solo con el
+    // intervalo configurado: si la placa envía más despacio de lo esperado, la
+    // línea debe seguir dibujándose en lugar de quedar cortada en cada punto.
+    const huecoEfectivo = Math.max(huecoS, separacionTipica(lecturas) * 2.5, 10);
     const datos = [];
     lecturas.forEach((l, i) => {
-      // Un hueco largo (ESP32 sin conexión) corta la línea en vez de unir puntos lejanos
-      if (i > 0 && l.x - lecturas[i - 1].x > huecoS) datos.push({ x: lecturas[i - 1].x + 1, y: null });
+      // Un hueco largo (placa sin conexión) corta la línea en vez de unir puntos lejanos
+      if (i > 0 && l.x - lecturas[i - 1].x > huecoEfectivo) datos.push({ x: lecturas[i - 1].x + 1, y: null });
       datos.push({ x: l.x, y: l.temperatura, ts: l.timestamp });
     });
 

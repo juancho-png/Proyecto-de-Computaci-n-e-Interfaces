@@ -48,8 +48,8 @@
 #define TIPO_SALIDA     0
 
 #define BAUDIOS         115200
-#define INTERVALO_INICIAL_S 30
-#define INTERVALO_MIN_S 2
+#define INTERVALO_INICIAL_S 1
+#define INTERVALO_MIN_S 1
 #define INTERVALO_MAX_S 60
 
 // Regla local de respaldo (si el PC/backend no responde)

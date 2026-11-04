@@ -276,7 +276,8 @@ export class VistaDashboard {
     }
     const VENTANA_S = 600;                       // segundos visibles (600 = 10 min)
     const xMax = ult ? ult.x + 30 : undefined;   // un poquito de margen a la derecha
-    const xMin = ult ? xMax - VENTANA_S : undefined;
+    // Nunca antes de la medianoche: evita horas negativas al inicio del día.
+    const xMin = ult ? Math.max(0, xMax - VENTANA_S) : undefined;
     this.grafica.actualizar(lect, {
       umbralMin: e.umbral_minimo, umbralMax: e.umbral_maximo, marcadores, huecoS: e.intervalo_s * 3,
       xMin, xMax,

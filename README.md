@@ -89,7 +89,7 @@ en `puente_serial.py`.
 | Arduino → PC | `L,4.25,1,1` | Temperatura, ventilador, sensor OK |
 | Arduino → PC | `E,0` | Sensor desconectado, ventilador apagado |
 | PC → Arduino | `V,1` / `V,0` | Encender / apagar ventilador |
-| PC → Arduino | `I,30` | Intervalo de lectura en segundos |
+| PC → Arduino | `I,1` | Intervalo de lectura en segundos (1 a 60) |
 
 ## Decisiones por confirmar con el equipo
 - Placa activa: **Arduino UNO R3** a 5 V; el DS18B20 se alimenta a 5 V y el

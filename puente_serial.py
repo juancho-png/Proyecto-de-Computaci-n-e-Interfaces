@@ -32,7 +32,7 @@ ID_VITRINA = 1
 BAUDIOS = 115200
 REINTENTO_S = 5
 TIMEOUT_HTTP_S = 5
-INTERVALO_MIN_S = 2
+INTERVALO_MIN_S = 1
 INTERVALO_MAX_S = 60
 
 
@@ -142,9 +142,9 @@ def main():
         salida = respuesta.get("salida") or {}
         ventilador = bool(salida.get("ventilador", respuesta.get("ventilador", False)))
         try:
-            intervalo = int(respuesta.get("intervalo", 30))
+            intervalo = int(respuesta.get("intervalo", 1))
         except (TypeError, ValueError):
-            intervalo = 30
+            intervalo = 1
         intervalo = max(INTERVALO_MIN_S, min(INTERVALO_MAX_S, intervalo))
 
         if "temperatura" in datos:

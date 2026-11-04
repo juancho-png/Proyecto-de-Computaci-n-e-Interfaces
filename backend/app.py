@@ -19,7 +19,7 @@ HISTERESIS = 1.0                 # °C por debajo del máximo para apagar el ven
 MARGEN_AMARILLO = 0.5            # °C al límite para mostrar el semáforo en amarillo
 TIEMPO_MAX_RECUPERACION_MIN = 15  # minutos fuera de rango antes de pedir revisión manual (por definir)
 MODOS = ("auto", "manual", "apagado")
-INTERVALOS_VALIDOS = (2, 5, 10, 30, 60)
+INTERVALOS_VALIDOS = (1, 2, 5, 10, 30, 60)
 LECTURAS_INVALIDAS = (-127.0, 85.0)   # valores que entrega el DS18B20 cuando falla o se reinicia
 VERSION = "1.2"
 
@@ -73,7 +73,7 @@ class Vitrina:
     tipo_producto = "General"
 
     def __init__(self, id_vitrina, nombre, umbral_minimo=None, umbral_maximo=None,
-                 modo="auto", ventilador_manual=False, intervalo_s=30, configurada=False):
+                 modo="auto", ventilador_manual=False, intervalo_s=1, configurada=False):
         self.id_vitrina = id_vitrina
         self.nombre = nombre
         minimo, maximo = self.definir_rango_seguro()
@@ -261,7 +261,7 @@ def init_db():
     _agregar_columna(con, "vitrinas", "umbral_maximo", "REAL")
     _agregar_columna(con, "vitrinas", "modo", "TEXT NOT NULL DEFAULT 'auto'")
     _agregar_columna(con, "vitrinas", "ventilador_manual", "INTEGER NOT NULL DEFAULT 0")
-    _agregar_columna(con, "vitrinas", "intervalo_s", "INTEGER NOT NULL DEFAULT 30")
+    _agregar_columna(con, "vitrinas", "intervalo_s", "INTEGER NOT NULL DEFAULT 1")
     _agregar_columna(con, "vitrinas", "configurada", "INTEGER NOT NULL DEFAULT 0")
     _agregar_columna(con, "vitrinas", "ultimo_contacto", "TEXT")
     _agregar_columna(con, "vitrinas", "error_sensor_desde", "TEXT")
@@ -540,7 +540,7 @@ def _validar_configuracion(datos):
     except (TypeError, ValueError):
         intervalo = None
     if intervalo not in INTERVALOS_VALIDOS:
-        errores["intervalo_s"] = "Elige 10 s, 30 s o 1 min."
+        errores["intervalo_s"] = "Elige un intervalo entre 1 segundo y 1 minuto."
 
     return dict(nombre=nombre, tipo=tipo, umbral_minimo=minimo, umbral_maximo=maximo,
                 modo=modo, intervalo_s=intervalo), errores

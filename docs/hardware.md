@@ -225,7 +225,7 @@ IP del servidor. Si el puerto no aparece en Windows, instalar el driver **CH340*
 | Arduino → PC | `E,0` | Sensor desconectado, ventilador apagado |
 | PC → Arduino | `V,1` | Encender ventilador |
 | PC → Arduino | `V,0` | Apagar ventilador |
-| PC → Arduino | `I,30` | Leer cada 30 segundos |
+| PC → Arduino | `I,1` | Leer cada 1 segundo (mínimo) |
 
 ## 8. Backend adaptado
 
@@ -245,7 +245,7 @@ La respuesta de `POST /lecturas` incluye:
   "led": true,
   "salida": { "ventilador": true, "led": true },
   "sensor_ok": true,
-  "intervalo": 30,
+  "intervalo": 1,
   "modo": "auto"
 }
 ```

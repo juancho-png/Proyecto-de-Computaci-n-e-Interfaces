@@ -64,8 +64,9 @@ export class VistaConfiguracion {
             <div class="campo" data-campo="intervalo_s">
               <label for="c-intervalo">Intervalo de lectura</label>
               <select id="c-intervalo">
-                <option value="2">2 segundos</option><option value="5">5 segundos</option>
-<option value="10">10 segundos</option><option value="30">30 segundos</option><option value="60">1 minuto</option>
+                <option value="1">1 segundo</option><option value="2">2 segundos</option>
+                <option value="5">5 segundos</option><option value="10">10 segundos</option>
+                <option value="30">30 segundos</option><option value="60">1 minuto</option>
               </select>
             </div>
             <div class="campo" data-campo="modo">

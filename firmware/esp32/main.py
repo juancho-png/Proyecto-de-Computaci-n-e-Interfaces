@@ -51,8 +51,8 @@ PIN_LED = 21
 # "solo_led" -> sin MOSFET/relé: ventilador directo a 12 V, el LED solo señala
 MODO_SALIDA = "mosfet"
 
-INTERVALO_S = 30            # segundos entre lecturas (el backend puede cambiarlo)
-INTERVALO_MIN_S = 10
+INTERVALO_S = 1             # segundos entre lecturas (el backend puede cambiarlo)
+INTERVALO_MIN_S = 1
 INTERVALO_MAX_S = 60
 
 # Regla local de respaldo (se usa solo si el backend no responde)
